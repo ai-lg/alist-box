@@ -8,6 +8,6 @@ RUN apk add --no-cache bash curl gcc git go musl-dev; \
 
 FROM xiaoyaliu/alist:hostmode
 
-LABEL MAINTAINER="Har01d"
+LABEL MAINTAINER="ailg"
 
 COPY --from=builder /app/bin/alist ./
