@@ -1,4 +1,4 @@
-package quark_share
+package uc_share
 
 import (
 	"errors"
@@ -18,14 +18,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) quark-cloud-drive/2.5.20 Chrome/100.0.4896.160 Electron/18.3.5.4-b478491100 Safari/537.36 Channel/pckk_other_ch"
-const Referer = "https://pan.quark.cn"
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) uc-cloud-drive/2.5.20 Chrome/100.0.4896.160 Electron/18.3.5.4-b478491100 Safari/537.36 Channel/pckk_other_ch"
+const Referer = "https://fast.uc.cn/"
 
 var Cookie = ""
 var ParentFileId = "0"
 
-func (d *QuarkShare) request(pathname string, method string, callback base.ReqCallback, resp interface{}) ([]byte, error) {
-	u := "https://drive.quark.cn/1/clouddrive" + pathname
+func (d *UcShare) request(pathname string, method string, callback base.ReqCallback, resp interface{}) ([]byte, error) {
+	u := "https://pc-api.uc.cn/1/clouddrive" + pathname
 	req := base.RestyClient.R()
 	req.SetHeaders(map[string]string{
 		"Cookie":     Cookie,
@@ -33,7 +33,8 @@ func (d *QuarkShare) request(pathname string, method string, callback base.ReqCa
 		"User-Agent": UA,
 		"Referer":    Referer,
 	})
-	req.SetQueryParam("pr", "ucpro")
+	req.SetQueryParam("entry", "ft")
+	req.SetQueryParam("pr", "UCBrowser")
 	req.SetQueryParam("fr", "pc")
 	if callback != nil {
 		callback(req)
@@ -57,7 +58,7 @@ func (d *QuarkShare) request(pathname string, method string, callback base.ReqCa
 	return res.Body(), nil
 }
 
-func (d *QuarkShare) getTempFolder() {
+func (d *UcShare) getTempFolder() {
 	files, err := d.GetFiles("0")
 	if err != nil {
 		log.Warnf("get files error: %v", err)
@@ -73,7 +74,7 @@ func (d *QuarkShare) getTempFolder() {
 	d.createTempFolder()
 }
 
-func (d *QuarkShare) createTempFolder() {
+func (d *UcShare) createTempFolder() {
 	data := base.Json{
 		"dir_init_lock": false,
 		"dir_path":      "",
@@ -93,7 +94,7 @@ func (d *QuarkShare) createTempFolder() {
 	}
 }
 
-func (d *QuarkShare) cleanTempFolder() {
+func (d *UcShare) cleanTempFolder() {
 	if ParentFileId == "0" {
 		return
 	}
@@ -108,7 +109,7 @@ func (d *QuarkShare) cleanTempFolder() {
 	}
 }
 
-func (d *QuarkShare) GetFiles(parent string) ([]File, error) {
+func (d *UcShare) GetFiles(parent string) ([]File, error) {
 	files := make([]File, 0)
 	page := 1
 	size := 100
@@ -138,10 +139,11 @@ func (d *QuarkShare) GetFiles(parent string) ([]File, error) {
 	return files, nil
 }
 
-func (d *QuarkShare) getShareToken() error {
+func (d *UcShare) getShareToken() error {
 	data := base.Json{
-		"pwd_id":   d.ShareId,
-		"passcode": d.SharePwd,
+		"pwd_id":             d.ShareId,
+		"passcode":           d.SharePwd,
+		"share_for_transfer": true,
 	}
 	var errRes Resp
 	var resp ShareTokenResp
@@ -160,7 +162,7 @@ func (d *QuarkShare) getShareToken() error {
 	return nil
 }
 
-func (d *QuarkShare) saveFile(id string) (string, error) {
+func (d *UcShare) saveFile(id string) (string, error) {
 	s := strings.Split(id, "-")
 	fileId := s[0]
 	fileTokenId := s[1]
@@ -174,7 +176,7 @@ func (d *QuarkShare) saveFile(id string) (string, error) {
 		"scene":          "link",
 	}
 	query := map[string]string{
-		"pr":           "ucpro",
+		"pr":           "UCBrowser",
 		"fr":           "pc",
 		"uc_param_str": "",
 		"__dt":         strconv.Itoa(rand.Int()),
@@ -204,11 +206,11 @@ func (d *QuarkShare) saveFile(id string) (string, error) {
 	return newFileId, nil
 }
 
-func (d *QuarkShare) getSaveTaskResult(taskId string) (string, error) {
+func (d *UcShare) getSaveTaskResult(taskId string) (string, error) {
 	time.Sleep(500 * time.Millisecond)
 	for retry := 1; retry <= 30; {
 		query := map[string]string{
-			"pr":           "ucpro",
+			"pr":           "UCBrowser",
 			"fr":           "pc",
 			"uc_param_str": "",
 			"retry_index":  strconv.Itoa(retry),
@@ -237,7 +239,7 @@ func (d *QuarkShare) getSaveTaskResult(taskId string) (string, error) {
 	return "", errors.New("Get task result failed.")
 }
 
-func (d *QuarkShare) getDownloadUrl(fileId string) (*model.Link, error) {
+func (d *UcShare) getDownloadUrl(fileId string) (*model.Link, error) {
 	data := base.Json{
 		"fids": []string{fileId},
 	}
@@ -272,7 +274,7 @@ func (d *QuarkShare) getDownloadUrl(fileId string) (*model.Link, error) {
 	}, nil
 }
 
-func (d *QuarkShare) deleteDelay(fileId string) {
+func (d *UcShare) deleteDelay(fileId string) {
 	delayTime := setting.GetInt(conf.DeleteDelayTime, 900)
 	if delayTime == 0 {
 		return
@@ -283,7 +285,7 @@ func (d *QuarkShare) deleteDelay(fileId string) {
 	d.deleteFile(fileId)
 }
 
-func (d *QuarkShare) deleteFile(fileId string) error {
+func (d *UcShare) deleteFile(fileId string) error {
 	data := base.Json{
 		"action_type":  1,
 		"exclude_fids": []string{},
@@ -305,14 +307,14 @@ func (d *QuarkShare) deleteFile(fileId string) error {
 	return nil
 }
 
-func (d *QuarkShare) getShareFiles(id string) ([]File, error) {
+func (d *UcShare) getShareFiles(id string) ([]File, error) {
 	s := strings.Split(id, "-")
 	fileId := s[0]
 	files := make([]File, 0)
 	page := 1
 	for {
 		query := map[string]string{
-			"pr":            "ucpro",
+			"pr":            "UCBrowser",
 			"fr":            "pc",
 			"pwd_id":        d.ShareId,
 			"stoken":        d.ShareToken,
@@ -329,7 +331,7 @@ func (d *QuarkShare) getShareFiles(id string) ([]File, error) {
 		res, err := d.request("/share/sharepage/detail", http.MethodGet, func(req *resty.Request) {
 			req.SetQueryParams(query)
 		}, &resp)
-		log.Debugf("quark share get files: %s", string(res))
+		log.Debugf("UC share get files: %s", string(res))
 		if err != nil {
 			if err.Error() == "分享的stoken过期" {
 				d.getShareToken()

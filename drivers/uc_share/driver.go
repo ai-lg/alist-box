@@ -1,4 +1,4 @@
-package quark_share
+package uc_share
 
 import (
 	"context"
@@ -10,22 +10,22 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type QuarkShare struct {
+type UcShare struct {
 	model.Storage
 	Addition
 }
 
-func (d *QuarkShare) Config() driver.Config {
+func (d *UcShare) Config() driver.Config {
 	return config
 }
 
-func (d *QuarkShare) GetAddition() driver.Additional {
+func (d *UcShare) GetAddition() driver.Additional {
 	return &d.Addition
 }
 
-func (d *QuarkShare) Init(ctx context.Context) error {
+func (d *UcShare) Init(ctx context.Context) error {
 	if Cookie == "" {
-		uc := op.GetFirstDriver("Quark")
+		uc := op.GetFirstDriver("UC")
 		if uc != nil {
 			Cookie = uc.(*quark.QuarkOrUC).Cookie
 		}
@@ -43,11 +43,11 @@ func (d *QuarkShare) Init(ctx context.Context) error {
 	return nil
 }
 
-func (d *QuarkShare) Drop(ctx context.Context) error {
+func (d *UcShare) Drop(ctx context.Context) error {
 	return nil
 }
 
-func (d *QuarkShare) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([]model.Obj, error) {
+func (d *UcShare) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([]model.Obj, error) {
 	files, err := d.getShareFiles(dir.GetID())
 	if err != nil {
 		log.Warnf("list files error: %v", err)
@@ -58,7 +58,7 @@ func (d *QuarkShare) List(ctx context.Context, dir model.Obj, args model.ListArg
 	})
 }
 
-func (d *QuarkShare) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
+func (d *UcShare) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	log.Infof("获取文件直链 %v %v %v", file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(file.GetID())
 	if err != nil {
@@ -68,4 +68,4 @@ func (d *QuarkShare) Link(ctx context.Context, file model.Obj, args model.LinkAr
 	return d.getDownloadUrl(fileId)
 }
 
-var _ driver.Driver = (*QuarkShare)(nil)
+var _ driver.Driver = (*UcShare)(nil)

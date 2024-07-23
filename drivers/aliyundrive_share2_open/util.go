@@ -1,11 +1,15 @@
 package aliyundrive_share2_open
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"github.com/SheltonZhu/115driver/pkg/driver"
+	_115 "github.com/alist-org/alist/v3/drivers/115"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/setting"
+	"github.com/alist-org/alist/v3/internal/stream"
 	"github.com/alist-org/alist/v3/internal/token"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
@@ -325,7 +329,7 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 	return newFile, nil
 }
 
-func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error) {
+func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, string, error) {
 	res, err := d.requestOpen("/adrive/v1.0/openFile/getDownloadUrl", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
 			"drive_id":   DriveId,
@@ -338,24 +342,28 @@ func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error)
 
 	if err != nil {
 		log.Errorf("getOpenLink failed: %v", err)
-		return nil, err
+		return nil, "", err
 	}
 	url := utils.Json.Get(res, "url").ToString()
 	if url == "" {
 		if utils.Ext(file.GetName()) != "livp" {
-			return nil, errors.New("get download url failed: " + string(res))
+			return nil, "", errors.New("get download url failed: " + string(res))
 		}
 		url = utils.Json.Get(res, "streamsUrl", "mov").ToString()
 	}
+	hash := utils.Json.Get(res, "content_hash").ToString()
 
 	exp := 895 * time.Second
 	return &model.Link{
 		URL:        url,
 		Expiration: &exp,
-	}, nil
+		Header: http.Header{
+			"Referer": []string{"https://www.aliyundrive.com/"},
+		},
+	}, hash, nil
 }
 
-func (d *AliyundriveShare2Open) getDownloadUrl(fileId string) (string, error) {
+func (d *AliyundriveShare2Open) getDownloadUrl(fileId string) (string, string, error) {
 	log.Infof("getDownloadUrl %v %v", DriveId, fileId)
 	res, err := d.requestOpen("/adrive/v1.0/openFile/getDownloadUrl", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
@@ -367,14 +375,16 @@ func (d *AliyundriveShare2Open) getDownloadUrl(fileId string) (string, error) {
 
 	if err != nil {
 		log.Errorf("getDownloadUrl failed: %v", err)
-		return "", err
+		return "", "", err
 	}
 	url := utils.Json.Get(res, "url").ToString()
 	if url == "" {
 		url = utils.Json.Get(res, "streamsUrl", "mov").ToString()
 	}
 
-	return url, nil
+	hash := utils.Json.Get(res, "content_hash").ToString()
+
+	return url, hash, nil
 }
 
 func (d *AliyundriveShare2Open) getPreviewLink(file model.Obj) (*model.Link, error) {
@@ -413,7 +423,7 @@ func (d *AliyundriveShare2Open) getPreviewLink(file model.Obj) (*model.Link, err
 	}
 
 	if url == "" {
-		url, _ = d.getDownloadUrl(file.GetID())
+		url, _, _ = d.getDownloadUrl(file.GetID())
 	}
 
 	exp := 895 * time.Second
@@ -687,4 +697,63 @@ func (d *AliyundriveShare2Open) requestReturnErrResp(uri, method string, callbac
 		return nil, fmt.Errorf("%s:%s", e.Code, e.Message), &e
 	}
 	return res.Body(), nil, nil
+}
+
+func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan115, file model.Obj, link *model.Link) (*model.Link, error) {
+	if ok, err := pan115.UploadAvailable(); err != nil || !ok {
+		return nil, err
+	}
+	log.Debugf("save file to 115 cloud: file=%v dir=%v", file.GetID(), _115.TempDirId)
+	fs := stream.FileStream{
+		Obj: file,
+		Ctx: ctx,
+	}
+
+	ss, err := stream.NewSeekableStream(fs, link)
+	if err != nil {
+		log.Warnf("NewSeekableStream failed: %v", err)
+		return link, err
+	}
+
+	preHash := "2EF7BDE608CE5404E97D5F042F95F89F1C232871"
+	fullHash := fs.GetHash().GetHash(utils.SHA1)
+	log.Infof("id=%v name=%v size=%v hash=%v", fs.GetID(), fs.GetName(), fs.GetSize(), fullHash)
+	res, err := pan115.RapidUpload(fs.GetSize(), fs.GetName(), _115.TempDirId, preHash, fullHash, ss)
+	if err != nil {
+		log.Warnf("115 upload failed: %v", err)
+		return link, nil
+	}
+	log.Debugf("115.RapidUpload: %v", res)
+	for i := 0; i < 5; i++ {
+		var f = &_115.FileObj{
+			File: driver.File{
+				PickCode: res.PickCode,
+			},
+		}
+		link115, err := pan115.Link(ctx, f, model.LinkArgs{Header: http.Header{}})
+		if err != nil {
+			time.Sleep(200 * time.Millisecond)
+			continue
+		}
+		go d.delayDelete115(pan115, fullHash)
+		log.Infof("使用115链接: %v", link115.URL)
+		exp := 4 * time.Hour
+		return &model.Link{
+			URL:        link115.URL,
+			Header:     link115.Header,
+			Expiration: &exp,
+		}, nil
+	}
+	return link, nil
+}
+
+func (d *AliyundriveShare2Open) delayDelete115(pan115 *_115.Pan115, fileId string) {
+	delayTime := setting.GetInt(conf.DeleteDelayTime, 900)
+	if delayTime == 0 {
+		return
+	}
+
+	log.Infof("Delete 115 file %v after %v seconds.", fileId, delayTime)
+	time.Sleep(time.Duration(delayTime) * time.Second)
+	pan115.DeleteTempFile(fileId)
 }
