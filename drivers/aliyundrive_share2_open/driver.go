@@ -167,6 +167,7 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 			link = link115
 		}
 	}
+	log.Printf("==========link is: %+v\n", link)
 	return link, err
 }
 
