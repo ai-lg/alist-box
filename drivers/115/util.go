@@ -41,7 +41,7 @@ func (d *Pan115) login() error {
 		s := &driver115.QRCodeSession{
 			UID: d.Addition.QRCodeToken,
 		}
-		if cr, err = d.client.QRCodeLoginWithApp(s, driver115.LoginApp(d.QRCodeSource)); err != nil {
+		if cr, err = d.client.QRCodeLogin(s); err != nil {
 			return errors.Wrap(err, "failed to login by qrcode")
 		}
 		d.Addition.Cookie = fmt.Sprintf("UID=%s;CID=%s;SEID=%s", cr.UID, cr.CID, cr.SEID)
@@ -173,7 +173,7 @@ func (c *Pan115) DownloadWithUA(pickCode, ua string) (*driver115.DownloadInfo, e
 	return nil, driver115.ErrUnexpected
 }
 
-func (d *Pan115) rapidUpload(fileSize int64, fileName, dirID, preID, fileID string, stream model.FileStreamer) (*driver115.UploadInitResp, error) {
+func (d *Pan115) RapidUpload(fileSize int64, fileName, dirID, preID, fileID string, stream model.FileStreamer) (*driver115.UploadInitResp, error) {
 	var (
 		ecdhCipher   *cipher.EcdhCipher
 		encrypted    []byte
