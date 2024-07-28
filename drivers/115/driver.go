@@ -73,17 +73,20 @@ func (d *Pan115) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 	}
 	var userAgent = args.Header.Get("User-Agent")
 	log.Println("==========User-Agent: ", userAgent)
-	/*
+	
 	if userAgent == "" {
-		userAgent = driver115.UA115Browser
+		//userAgent = driver115.UA115Browser
+		userAgent = "(Windows NT 10.0; Win64; x64) PotPlayer/24.05.09"
+
 	}
-	*/
+	
 
 	downloadInfo, err := d.client.
 		DownloadWithUA(file.(*FileObj).PickCode, userAgent)
 	if err != nil {
 		return nil, err
 	}
+	downloadInfo.Header.Set("Access-Control-Allow-Origin", "*")
 	link := &model.Link{
 		URL:    downloadInfo.Url.Url,
 		Header: downloadInfo.Header,
