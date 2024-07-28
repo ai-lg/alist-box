@@ -330,16 +330,23 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 }
 
 func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, string, error) {
+	var userAgent string
+	header := http.Header{}
+	header.Set("Referer", "https://www.aliyundrive.com/")
 	res, err := d.requestOpen("/adrive/v1.0/openFile/getDownloadUrl", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
 			"drive_id":   DriveId,
 			"file_id":    file.GetID(),
 			"expire_sec": 14400,
 		})
+		userAgent = req.Header.Get("User-Agent")
+		header.Set("User-Agent", userAgent)
+		log.Debugf("==========Request headers: %v", req.Header)
+		log.Debugf("==========header now is: %v", header)
 	})
 
 	go d.deleteDelay(file.GetID())
-
+	
 	if err != nil {
 		log.Errorf("getOpenLink failed: %v", err)
 		return nil, "", err
@@ -354,12 +361,11 @@ func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, string
 	hash := utils.Json.Get(res, "content_hash").ToString()
 
 	exp := 895 * time.Second
+	log.Debugf("==========header now is: %v", header)
 	return &model.Link{
 		URL:        url,
 		Expiration: &exp,
-		Header: http.Header{
-			"Referer": []string{"https://www.aliyundrive.com/"},
-		},
+		Header: header,
 	}, hash, nil
 }
 
@@ -724,19 +730,24 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 		return link, nil
 	}
 	log.Debugf("115.RapidUpload: %v", res)
+	userAgentHeader := http.Header{}
+	userAgentHeader.Set("User-Agent", link.Header.Get("User-Agent"))
+	log.Debugf("==========userAgentHeader: %v", userAgentHeader)
 	for i := 0; i < 5; i++ {
 		var f = &_115.FileObj{
 			File: driver.File{
 				PickCode: res.PickCode,
 			},
 		}
-		link115, err := pan115.Link(ctx, f, model.LinkArgs{Header: http.Header{}})
+		//link115, err := pan115.Link(ctx, f, model.LinkArgs{Header: http.Header{}})
+		link115, err := pan115.Link(ctx, f, model.LinkArgs{Header: userAgentHeader})
 		if err != nil {
 			time.Sleep(200 * time.Millisecond)
 			continue
 		}
 		go d.delayDelete115(pan115, fullHash)
 		log.Infof("使用115链接: %v", link115.URL)
+		log.Debugf("==========now 115 Header: %v", link115.Header)
 		exp := 4 * time.Hour
 		return &model.Link{
 			URL:        link115.URL,
