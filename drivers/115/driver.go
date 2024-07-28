@@ -72,6 +72,7 @@ func (d *Pan115) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 		return nil, err
 	}
 	var userAgent = args.Header.Get("User-Agent")
+	log.Println("User-Agent: ", userAgent)
 	/*
 	if userAgent == "" {
 		userAgent = driver115.UA115Browser
