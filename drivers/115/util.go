@@ -135,6 +135,7 @@ func (c *Pan115) DownloadWithUA(pickCode, ua string) (*driver115.DownloadInfo, e
 	req.Header.Set("User-Agent", ua)
 
 	resp, err := c.client.Client.GetClient().Do(req)
+	log.Printf("Current User-Agent: %s", ua)
 	if err != nil {
 		return nil, err
 	}
