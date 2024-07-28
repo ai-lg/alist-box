@@ -19,7 +19,9 @@ import (
 	"strings"
 	"sync"
 	"time"
-
+	"net/http"
+	
+	crypto "github.com/gaoyb7/115drive-webdav/115"
 	driver115 "github.com/SheltonZhu/115driver/pkg/driver"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/pkg/errors"
