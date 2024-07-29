@@ -75,7 +75,7 @@ func (d *Pan115) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 	var userAgent = args.Header.Get("User-Agent")
 	log.Println("==========115/driver.go Link() User-Agent: ", userAgent)
 
-	if userAgent == "" {
+	if userAgent == "" || strings.Contains(userAgent, "AppleWebKit") {
 		userAgent = driver115.UA115Browser
 	}
 
