@@ -2,6 +2,7 @@ package fs
 
 import (
 	"context"
+
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
@@ -45,11 +46,14 @@ func Get(ctx context.Context, path string, args *GetArgs) (model.Obj, error) {
 }
 
 func Link(ctx context.Context, path string, args model.LinkArgs) (*model.Link, model.Obj, error) {
+	log.Debugf("==========/fs/fs.go Link() Args before: %+v", args)
 	res, file, err := link(ctx, path, args)
 	if err != nil {
 		log.Errorf("failed link %s: %+v", path, err)
 		return nil, nil, err
 	}
+	log.Debugf("==========/fs/fs.go Link() Args after: %+v", args)
+	log.Debugf("==========/fs/fs.go Link() res after: %+v", res)
 	return res, file, nil
 }
 
