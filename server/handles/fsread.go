@@ -17,6 +17,7 @@ import (
 	"github.com/alist-org/alist/v3/server/common"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 type ListReq struct {
@@ -302,6 +303,7 @@ func FsGet(c *gin.Context) {
 				rawURL = url
 			} else {
 				// if storage is not proxy, use raw url by fs.Link
+				log.Debugf("==========/handles/fsread.go FsGet() c.Request.Header: %+v", c.Request.Header)
 				link, _, err := fs.Link(c, reqPath, model.LinkArgs{
 					IP:      c.ClientIP(),
 					Header:  c.Request.Header,
