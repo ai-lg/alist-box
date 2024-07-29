@@ -3,6 +3,9 @@ package aliyundrive_share2_open
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/Xhofe/rateg"
 	_115 "github.com/alist-org/alist/v3/drivers/115"
 	"github.com/alist-org/alist/v3/drivers/base"
@@ -16,8 +19,6 @@ import (
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"time"
 )
 
 type AliyundriveShare2Open struct {
@@ -125,6 +126,7 @@ func (d *AliyundriveShare2Open) list(ctx context.Context, dir model.Obj) ([]mode
 }
 
 func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
+	ctx = context.WithValue(ctx, "useragent", args.Header.Get("User-Agent"))
 	if d.limitLink == nil {
 		return nil, fmt.Errorf("driver not init")
 	}
@@ -153,6 +155,9 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 
 	if !setting.GetBool(conf.AliTo115) {
 		return link, err
+	}
+	if ua, ok := ctx.Value("useragent").(string); ok {
+		link.Header.Set("User-Agent", ua)
 	}
 	driver115 := op.GetFirst115Driver()
 	if driver115 != nil {

@@ -2,8 +2,9 @@ package _115
 
 import (
 	"context"
-	log "github.com/sirupsen/logrus"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	driver115 "github.com/SheltonZhu/115driver/pkg/driver"
 	"github.com/alist-org/alist/v3/internal/driver"
@@ -72,14 +73,11 @@ func (d *Pan115) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 		return nil, err
 	}
 	var userAgent = args.Header.Get("User-Agent")
-	log.Println("==========User-Agent: ", userAgent)
-	
-	if userAgent == "" {
-		//userAgent = driver115.UA115Browser
-		userAgent = "(Windows NT 10.0; Win64; x64) PotPlayer/24.05.09"
+	log.Println("==========115/driver.go Link() User-Agent: ", userAgent)
 
+	if userAgent == "" {
+		userAgent = driver115.UA115Browser
 	}
-	
 
 	downloadInfo, err := d.client.
 		DownloadWithUA(file.(*FileObj).PickCode, userAgent)
