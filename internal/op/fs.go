@@ -244,6 +244,7 @@ func Link(ctx context.Context, storage driver.Driver, path string, args model.Li
 		return nil, nil, errors.Errorf("storage not init: %s", storage.GetStorage().Status)
 	}
 	file, err := GetUnwrap(ctx, storage, path)
+	log.Debugf("==========/op/fs.go file : %+v", file)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "failed to get file")
 	}
@@ -251,9 +252,11 @@ func Link(ctx context.Context, storage driver.Driver, path string, args model.Li
 		return nil, nil, errors.WithStack(errs.NotFile)
 	}
 	key := Key(storage, path)
+	log.Debugf("==========key: %+v", key)
 	if link, ok := linkCache.Get(key); ok {
 		return link, file, nil
 	}
+	log.Debugf("==========Args before fn : %+v", args)
 	fn := func() (*model.Link, error) {
 		link, err := storage.Link(ctx, file, args)
 		if err != nil {
@@ -265,9 +268,11 @@ func Link(ctx context.Context, storage driver.Driver, path string, args model.Li
 			}
 			linkCache.Set(key, link, cache.WithEx[*model.Link](*link.Expiration))
 		}
+		log.Debugf("==========fs.go.Link() return link: %+v", link)
 		return link, nil
 	}
 	link, err, _ := linkG.Do(key, fn)
+	log.Debugf("==========fs.go.Link() return link: %+v", link)
 	return link, file, err
 }
 
