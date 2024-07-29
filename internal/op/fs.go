@@ -254,7 +254,11 @@ func Link(ctx context.Context, storage driver.Driver, path string, args model.Li
 	key := Key(storage, path)
 	log.Debugf("==========key: %+v", key)
 	if link, ok := linkCache.Get(key); ok {
-		return link, file, nil
+		if link.Header.Get("User-Agent") == args.Header.Get("User-Agent") {
+			return link, file, nil
+		} else {
+			log.Infof("==========重新获取链接: %+v", key)
+		}
 	}
 	log.Debugf("==========Args before fn : %+v", args)
 	fn := func() (*model.Link, error) {
