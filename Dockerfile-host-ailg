@@ -16,4 +16,4 @@ WORKDIR /opt/alist/
 COPY --from=intermediate / /
 LABEL MAINTAINER="ailg"
 
-COPY --from=builder /app/alist.tar.gz /var/lib/
+COPY --from=builder /app/bin/alist ./
