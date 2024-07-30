@@ -8,7 +8,7 @@ RUN apk add --no-cache bash curl gcc git go musl-dev; \
 RUN tar -czvf alist.tar.gz /app/bin/alist
 
 FROM xiaoyaliu/alist:hostmode as intermediate
-RUN apk del nginx && rm -rf /etc/nginx/* /opt/alist/alist /updateall /entrypoint.sh
+RUN rm -rf /opt/alist/alist /updateall /entrypoint.sh
 
 FROM alpine:edge
 VOLUME [/opt/alist/data/]
