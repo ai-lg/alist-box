@@ -30,12 +30,16 @@ func (d *AListV3) login() error {
 
 func (d *AListV3) request(api, method string, callback base.ReqCallback, retry ...bool) ([]byte, error) {
 	url := d.Address + "/api" + api
+	log.Debugf("==========alist_v3/util.go request() url: %v", url)
 	req := base.RestyClient.R()
+	log.Debugf("==========alist_v3/util.go request() req before callback: %v", req)
 	req.SetHeader("Authorization", d.Token)
 	if callback != nil {
 		callback(req)
 	}
+	log.Debugf("==========alist_v3/util.go request() req after callback: %v", req)
 	res, err := req.Execute(method, url)
+	log.Debugf("==========alist_v3/util.go request() res : %v", res)
 	if err != nil {
 		return nil, err
 	}
@@ -54,5 +58,6 @@ func (d *AListV3) request(api, method string, callback base.ReqCallback, retry .
 		}
 		return nil, fmt.Errorf("request failed,code: %d, message: %s", code, utils.Json.Get(res.Body(), "message").ToString())
 	}
+	log.Debugf("==========alist_v3/util.go request() res.Body : %v", res.Body())
 	return res.Body(), nil
 }
