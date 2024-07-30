@@ -1,0 +1,19 @@
+FROM alpine:edge as builder
+LABEL stage=go-builder
+WORKDIR /app/
+COPY ./ ./
+ENV CGO_CFLAGS="-D_LARGEFILE64_SOURCE"
+RUN apk add --no-cache bash curl gcc git go musl-dev; \
+    bash build.sh release docker
+RUN tar -czvf alist.tar.gz /app/bin/alist
+
+FROM xiaoyaliu/alist:hostmode as intermediate
+RUN apk del nginx && rm -rf /etc/nginx/* /opt/alist/alist /updateall /entrypoint.sh
+
+FROM alpine:edge
+VOLUME [/opt/alist/data/]
+WORKDIR /opt/alist/
+COPY --from=intermediate / /
+LABEL MAINTAINER="ailg"
+
+COPY --from=builder /alist.tar.gz /var/lib/
