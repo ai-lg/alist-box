@@ -207,7 +207,7 @@ func (d *AliyundriveShare2Open) createFolderOpen() {
 		req.SetBody(base.Json{
 			"check_name_mode": "refuse",
 			"drive_id":        DriveId,
-			"name":            "xiaoya-tvbox-temp",
+			"name":            "g-box",
 			"parent_file_id":  "root",
 			"type":            "folder",
 		})
