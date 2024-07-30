@@ -1,4 +1,4 @@
-name: 'release alist-test'
+name: 'release alist-test-ailg'
 
 on:
   workflow_dispatch:
