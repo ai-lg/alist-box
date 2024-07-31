@@ -34,12 +34,10 @@ func (d *AListV3) request(api, method string, callback base.ReqCallback, retry .
 	requestURL := d.Address + "/api" + api
 	log.Debugf("==========alist_v3/util.go request() url: %v", requestURL)
 	req := base.RestyClient.R()
-	log.Debugf("==========alist_v3/util.go request() req before callback: %v", req)
 	req.SetHeader("Authorization", d.Token)
 	if callback != nil {
 		callback(req)
 	}
-	log.Debugf("==========alist_v3/util.go request() req after callback: %v", req)
 	res, err := req.Execute(method, requestURL)
 	log.Debugf("==========alist_v3/util.go request() res : %v", res)
 	if err != nil {
@@ -72,17 +70,19 @@ func (d *AListV3) request(api, method string, callback base.ReqCallback, retry .
 	if ok {
 		rawURL, ok := data["raw_url"].(string)
 		if ok {
-			// 解析原始URL和响应中的URL
 			originalURL, err := url.Parse(requestURL)
 			if err != nil {
 				return nil, err
 			}
+			log.Debugf("==========alist_v3/util.go request() originalURL : %v", originalURL)
 			responseURL, err := url.Parse(rawURL)
 			if err != nil {
 				return nil, err
 			}
+			log.Debugf("==========alist_v3/util.go request() responseURL : %v", responseURL)
 
-			// 如果响应中的URL缺少端口号，就把原始URL的端口号加上
+			log.Debugf("==========alist_v3/util.go request() responseURL.Port : %v", responseURL.Port())
+			log.Debugf("==========alist_v3/util.go request() originalURL.Port : %v", originalURL.Port())
 			if responseURL.Port() == "" && originalURL.Port() != "" {
 				responseURL.Host = responseURL.Host + ":" + originalURL.Port()
 				data["raw_url"] = responseURL.String()
@@ -101,6 +101,6 @@ func (d *AListV3) request(api, method string, callback base.ReqCallback, retry .
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("==========alist_v3/util.go request() modifiedBody : %v", modifiedBody)
+	log.Debugf("==========alist_v3/util.go request() modifiedBody : %s", string(modifiedBody))
 	return modifiedBody, nil
 }
