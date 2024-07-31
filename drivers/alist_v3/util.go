@@ -31,8 +31,8 @@ func (d *AListV3) login() error {
 }
 
 func (d *AListV3) request(api, method string, callback base.ReqCallback, retry ...bool) ([]byte, error) {
-	url := d.Address + "/api" + api
-	log.Debugf("==========alist_v3/util.go request() url: %v", url)
+	requestURL := d.Address + "/api" + api
+	log.Debugf("==========alist_v3/util.go request() url: %v", requestURL)
 	req := base.RestyClient.R()
 	log.Debugf("==========alist_v3/util.go request() req before callback: %v", req)
 	req.SetHeader("Authorization", d.Token)
@@ -40,7 +40,7 @@ func (d *AListV3) request(api, method string, callback base.ReqCallback, retry .
 		callback(req)
 	}
 	log.Debugf("==========alist_v3/util.go request() req after callback: %v", req)
-	res, err := req.Execute(method, url)
+	res, err := req.Execute(method, requestURL)
 	log.Debugf("==========alist_v3/util.go request() res : %v", res)
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (d *AListV3) request(api, method string, callback base.ReqCallback, retry .
 		rawURL, ok := data["raw_url"].(string)
 		if ok {
 			// 解析原始URL和响应中的URL
-			originalURL, err := url.Parse(url)
+			originalURL, err := url.Parse(requestURL)
 			if err != nil {
 				return nil, err
 			}
