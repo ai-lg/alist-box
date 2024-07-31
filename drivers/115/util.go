@@ -6,12 +6,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/model"
-	"github.com/alist-org/alist/v3/pkg/http_range"
-	"github.com/alist-org/alist/v3/pkg/utils"
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/orzogc/fake115uploader/cipher"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/url"
 	"path/filepath"
@@ -19,6 +13,13 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/pkg/http_range"
+	"github.com/alist-org/alist/v3/pkg/utils"
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"github.com/orzogc/fake115uploader/cipher"
+	log "github.com/sirupsen/logrus"
 
 	driver115 "github.com/SheltonZhu/115driver/pkg/driver"
 	"github.com/alist-org/alist/v3/internal/conf"
@@ -64,7 +65,7 @@ func (d *Pan115) createTempDir(ctx context.Context) {
 		ID: root,
 	}
 	var clean = false
-	name := "xiaoya-tvbox-temp"
+	name := "g-box"
 	_ = d.MakeDir(ctx, dir, name)
 	files, _ := d.getFiles(root)
 	for _, file := range files {
