@@ -94,6 +94,6 @@ func (d *AListV3) request(api, method string, callback base.ReqCallback, retry .
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("==========alist_v3/util.go request() res : %v", modifiedBody)
+	log.Debugf("==========alist_v3/util.go request() modifiedBody : %v", modifiedBody)
 	return modifiedBody, nil
 }
