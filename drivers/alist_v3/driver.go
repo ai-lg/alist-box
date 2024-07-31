@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"path"
 	"strconv"
 	"strings"
@@ -136,7 +137,15 @@ func (d *AListV3) Link(ctx context.Context, file model.Obj, args model.LinkArgs)
 	if ok {
 		rawURL, ok := data["raw_url"].(string)
 		if ok {
-			if resp.Data.RawURL != rawURL {
+			respURL, err := url.Parse(resp.Data.RawURL)
+			if err != nil {
+				return nil, err
+			}
+			parsedRawURL, err := url.Parse(rawURL)
+			if err != nil {
+				return nil, err
+			}
+			if respURL.Hostname() == parsedRawURL.Hostname() && resp.Data.RawURL != rawURL {
 				resp.Data.RawURL = rawURL
 			}
 		}

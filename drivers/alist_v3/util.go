@@ -83,7 +83,7 @@ func (d *AListV3) request(api, method string, callback base.ReqCallback, retry .
 
 			log.Debugf("==========alist_v3/util.go request() responseURL.Port : %v", responseURL.Port())
 			log.Debugf("==========alist_v3/util.go request() originalURL.Port : %v", originalURL.Port())
-			if responseURL.Port() == "" && originalURL.Port() != "" {
+			if responseURL.Hostname() == originalURL.Hostname() && responseURL.Port() == "" && originalURL.Port() != "" {
 				responseURL.Host = responseURL.Host + ":" + originalURL.Port()
 				data["raw_url"] = responseURL.String()
 			}
