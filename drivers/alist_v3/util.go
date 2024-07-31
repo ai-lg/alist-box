@@ -87,7 +87,13 @@ func (d *AListV3) request(api, method string, callback base.ReqCallback, retry .
 				responseURL.Host = responseURL.Host + ":" + originalURL.Port()
 				data["raw_url"] = responseURL.String()
 			}
+		} else {
+			// 如果data中没有raw_url，返回原始的响应体
+			return res.Body(), nil
 		}
+	} else {
+		// 如果data中没有raw_url，返回原始的响应体
+		return res.Body(), nil
 	}
 
 	// 将修改后的响应体转换回字节切片
