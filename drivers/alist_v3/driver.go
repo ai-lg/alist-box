@@ -2,6 +2,7 @@ package alist_v3
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,6 +17,7 @@ import (
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/alist-org/alist/v3/server/common"
 	"github.com/go-resty/resty/v2"
+	log "github.com/sirupsen/logrus"
 )
 
 type AListV3 struct {
@@ -111,7 +113,7 @@ func (d *AListV3) List(ctx context.Context, dir model.Obj, args model.ListArgs) 
 
 func (d *AListV3) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	var resp common.Resp[FsGetResp]
-	_, err := d.request("/fs/get", http.MethodPost, func(req *resty.Request) {
+	body, err := d.request("/fs/get", http.MethodPost, func(req *resty.Request) {
 		req.SetResult(&resp).SetBody(FsGetReq{
 			Path:     file.GetPath(),
 			Password: d.MetaPassword,
@@ -120,6 +122,25 @@ func (d *AListV3) Link(ctx context.Context, file model.Obj, args model.LinkArgs)
 	if err != nil {
 		return nil, err
 	}
+	log.Debugf("==========Link() resp: %+v", resp)
+	log.Debugf("==========Link() resp.Data.RawURL: %s", resp.Data.RawURL)
+	var responseBody map[string]interface{}
+	err = json.Unmarshal(body, &responseBody)
+	if err != nil {
+		return nil, err
+	}
+
+	data, ok := responseBody["data"].(map[string]interface{})
+	if ok {
+		rawURL, ok := data["raw_url"].(string)
+		if ok {
+			if resp.Data.RawURL != rawURL {
+				resp.Data.RawURL = rawURL
+			}
+		}
+	}
+
+	log.Debugf("==========Link() resp.Data.RawURL: %s", resp.Data.RawURL)
 	return &model.Link{
 		URL: resp.Data.RawURL,
 	}, nil

@@ -255,6 +255,7 @@ func Link(ctx context.Context, storage driver.Driver, path string, args model.Li
 	log.Debugf("==========key: %+v", key)
 	if link, ok := linkCache.Get(key); ok {
 		if link.Header.Get("User-Agent") == args.Header.Get("User-Agent") {
+			log.Debugf("==========op/fs.go Link() this log means return cache link: %+v", link)
 			return link, file, nil
 		} else {
 			log.Infof("==========重新获取链接: %+v", key)
