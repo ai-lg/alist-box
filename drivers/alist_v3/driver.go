@@ -119,7 +119,9 @@ func (d *AListV3) Link(ctx context.Context, file model.Obj, args model.LinkArgs)
 			Password: d.MetaPassword,
 		})
 	})
+	log.Debugf("==========alist_v3/driver.go Link() body : %s", string(body))
 	if err != nil {
+		log.Debugf("==========alist_v3/driver.go Link() this mean err return : %v", err)
 		return nil, err
 	}
 	log.Debugf("==========Link() resp: %+v", resp)
